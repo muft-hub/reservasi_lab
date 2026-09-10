@@ -1,127 +1,85 @@
-@extends('layouts.app')
+@props(['reservasis' => [], 'ruangs' => [], 'role' => 'mahasiswa'])
 
-@section('content')
-<div class="space-y-6">
-    <!-- Header Dashboard Mahasiswa -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+<!-- Widget Kalender Reservasi Laboratorium -->
+<div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden mb-6">
+    <!-- Header Kalender & Filter -->
+    <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-xl font-bold text-slate-800">Laboratorium & Jadwal Penggunaan</h1>
-            <p class="text-xs text-slate-500">Cek ketersediaan jadwal laboratorium pada kalender sebelum mengajukan reservasi.</p>
-        </div>
-        <a href="{{ route('mahasiswa.reservasi.riwayat') }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition shadow-xs self-start sm:self-auto flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Riwayat Reservasi Saya
-        </a>
-    </div>
-
-    <!-- KALENDER WIDGET -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                    <h2 class="text-base font-bold text-slate-800 tracking-tight">Kalender Penggunaan Laboratorium</h2>
-                </div>
-                <p class="text-xs text-slate-500 mt-0.5">Pilih tanggal untuk melihat rincian peminjam, jam, dan ruangan.</p>
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                <h2 class="text-base font-bold text-slate-800 tracking-tight">Kalender Penggunaan Laboratorium</h2>
             </div>
+            <p class="text-xs text-slate-500 mt-0.5">Pilih tanggal untuk melihat rincian peminjam, laboratorium, dan jam peminjaman.</p>
+        </div>
 
-            <div class="flex flex-wrap items-center gap-2.5">
-                <select id="cal-filter-ruang" onchange="renderCalendar()" class="px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 font-medium">
-                    <option value="all">Semua Laboratorium</option>
-                    @if(isset($ruangs))
-                        @foreach($ruangs as $rg)
-                            <option value="{{ $rg->id }}">{{ $rg->kode }} - {{ $rg->nama }}</option>
-                        @endforeach
-                    @endif
-                </select>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <!-- Filter Ruang Lab -->
+            <select id="cal-filter-ruang" onchange="renderCalendar()" class="px-3 py-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+                <option value="all">Semua Laboratorium</option>
+                @if(isset($ruangs) && count($ruangs) > 0)
+                    @foreach($ruangs as $rg)
+                        <option value="{{ $rg->id }}">{{ $rg->kode }} - {{ $rg->nama }}</option>
+                    @endforeach
+                @endif
+            </select>
 
-                <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
-                    <button type="button" onclick="changeMonth(-1)" class="p-1.5 hover:bg-white rounded-lg text-slate-600 transition" title="Bulan Lalu">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    </button>
-                    <span id="cal-month-year" class="px-3 text-xs font-bold text-slate-800 min-w-[130px] text-center select-none">-</span>
-                    <button type="button" onclick="changeMonth(1)" class="p-1.5 hover:bg-white rounded-lg text-slate-600 transition" title="Bulan Depan">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                </div>
-
-                <button type="button" onclick="goToToday()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
-                    Hari Ini
+            <!-- Navigasi Bulan -->
+            <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+                <button type="button" onclick="changeMonth(-1)" class="p-1.5 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition" title="Bulan Sebelumnya">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <span id="cal-month-year" class="px-3 text-xs font-bold text-slate-800 min-w-[130px] text-center select-none">
+                    -
+                </span>
+                <button type="button" onclick="changeMonth(1)" class="p-1.5 hover:bg-white rounded-lg text-slate-600 hover:text-slate-900 transition" title="Bulan Berikutnya">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
             </div>
-        </div>
 
-        <div class="px-5 py-2.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center gap-4 text-[11px] text-slate-600">
-            <span class="font-semibold text-slate-700">Keterangan:</span>
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Disetujui</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Menunggu Konfirmasi</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-600"></span><span>Hari Ini</span></div>
-            <div class="ml-auto text-slate-400 hidden sm:inline">💡 Klik tanggal untuk melihat peminjam</div>
+            <!-- Tombol Kembali ke Hari Ini -->
+            <button type="button" onclick="goToToday()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Hari Ini
+            </button>
         </div>
-
-        <div class="grid grid-cols-7 border-b border-slate-100 text-center text-xs font-bold text-slate-600 bg-slate-50/50">
-            <div class="py-2.5 border-r border-slate-100 text-rose-600">Min</div>
-            <div class="py-2.5 border-r border-slate-100">Sen</div>
-            <div class="py-2.5 border-r border-slate-100">Sel</div>
-            <div class="py-2.5 border-r border-slate-100">Rab</div>
-            <div class="py-2.5 border-r border-slate-100">Kam</div>
-            <div class="py-2.5 border-r border-slate-100">Jum</div>
-            <div class="py-2.5 text-blue-600">Sab</div>
-        </div>
-
-        <div id="cal-grid" class="grid grid-cols-7 divide-x divide-y divide-slate-100 text-xs bg-slate-50/20"></div>
     </div>
 
-    <!-- DAFTAR LABORATORIUM -->
-    <div class="pt-2">
-        <h2 class="text-base font-bold text-slate-800 tracking-tight">Daftar Laboratorium Tersedia</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Pilih salah satu ruangan untuk mengajukan peminjaman:</p>
+    <!-- Legend Keterangan Status -->
+    <div class="px-5 py-2.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center gap-4 text-[11px] text-slate-600">
+        <span class="font-semibold text-slate-700">Keterangan:</span>
+        <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Disetujui</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span>Menunggu Konfirmasi</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+            <span>Hari Ini</span>
+        </div>
+        <div class="ml-auto text-slate-400 hidden sm:inline">
+            💡 Tips: Klik kotak tanggal untuk melihat rincian peminjam & waktu
+        </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @forelse($ruangs as $r)
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs flex flex-col hover:shadow-md transition">
-                <div class="h-44 bg-slate-100 relative overflow-hidden flex items-center justify-center">
-                    @if($r->foto)
-                        <img src="{{ asset('storage/' . $r->foto) }}" alt="{{ $r->nama }}" class="w-full h-full object-cover">
-                    @else
-                        <div class="text-slate-300">
-                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                        </div>
-                    @endif
-                    <span class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white font-bold text-[10px] px-2.5 py-1 rounded-md shadow-xs">
-                        {{ $r->kode }}
-                    </span>
-                </div>
+    <!-- Grid Header Nama Hari -->
+    <div class="grid grid-cols-7 border-b border-slate-100 text-center text-xs font-bold text-slate-600 bg-slate-50/50">
+        <div class="py-2.5 border-r border-slate-100 text-rose-600">Min</div>
+        <div class="py-2.5 border-r border-slate-100">Sen</div>
+        <div class="py-2.5 border-r border-slate-100">Sel</div>
+        <div class="py-2.5 border-r border-slate-100">Rab</div>
+        <div class="py-2.5 border-r border-slate-100">Kam</div>
+        <div class="py-2.5 border-r border-slate-100">Jum</div>
+        <div class="py-2.5 text-blue-600">Sab</div>
+    </div>
 
-                <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                    <div class="space-y-2">
-                        <span class="text-xs text-slate-500 font-medium">👥 Kapasitas: <strong class="text-slate-800">{{ $r->kapasitas }} orang</strong></span>
-                        <h3 class="font-bold text-slate-800 text-sm">{{ $r->nama }}</h3>
-                        <p class="text-xs text-slate-500">📍 {{ $r->lokasi }}</p>
-                        @if($r->fasilitas)
-                            <p class="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                <strong class="text-slate-700">Fasilitas:</strong> {{ $r->fasilitas }}
-                            </p>
-                        @endif
-                    </div>
-
-                    <div class="pt-3 border-t border-slate-100">
-                        <a href="{{ route('mahasiswa.reservasi.create', $r->id) }}" class="w-full block text-center py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-xs">
-                            Ajukan Reservasi Ruangan Ini
-                        </a>
-                    </div>
-                </div>
-            </div>
-        @empty
-            <div class="col-span-3 text-center py-10 bg-white border border-slate-200 rounded-2xl">
-                <p class="text-xs text-slate-400">Belum ada data laboratorium.</p>
-            </div>
-        @endforelse
+    <!-- Container Grid Tanggal Dinamis -->
+    <div id="cal-grid" class="grid grid-cols-7 divide-x divide-y divide-slate-100 text-xs bg-slate-50/20">
     </div>
 </div>
 
-<!-- MODAL DETAIL PEMINJAM -->
+<!-- Modal Detail Tanggal Terpilih -->
 <div id="modal-cal-detail" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
         <div class="flex items-start justify-between pb-3 border-b border-slate-100">
@@ -133,13 +91,20 @@
             <button type="button" onclick="closeCalDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1">&times;</button>
         </div>
 
+        <!-- Daftar Peminjaman pada Tanggal Terpilih -->
         <div id="modal-detail-list" class="space-y-3"></div>
 
         <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
-            <a id="btn-ajukan-tanggal" href="{{ route('mahasiswa.reservasi.create') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition shadow-xs flex items-center gap-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Ajukan Reservasi di Tanggal Ini
-            </a>
+            @if($role === 'mahasiswa')
+                <a id="btn-ajukan-tanggal" href="{{ url('/reservasi/create') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition shadow-xs flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Ajukan Reservasi di Tanggal Ini
+                </a>
+            @else
+                <a href="{{ route('admin.reservasi.index') }}" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-semibold transition shadow-xs flex items-center gap-1.5">
+                    Kelola Reservasi
+                </a>
+            @endif
 
             <button type="button" onclick="closeCalDetailModal()" class="px-4 py-2 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl font-semibold">
                 Tutup
@@ -148,9 +113,9 @@
     </div>
 </div>
 
-<!-- SCRIPT KALENDER -->
 <script>
 const allCalReservasis = @json($reservasis ?? []);
+const userRole = '{{ $role }}';
 
 let calCurrentDate = new Date();
 
@@ -194,7 +159,6 @@ function renderCalendar() {
     const todayDate = todayObj.getDate();
 
     const grid = document.getElementById('cal-grid');
-    if (!grid) return;
     grid.innerHTML = '';
 
     const filteredReservasis = allCalReservasis.filter(item => {
@@ -214,21 +178,23 @@ function renderCalendar() {
         reservasiByDate[dateStr].push(item);
     });
 
+    // Hari dari bulan sebelumnya
     for (let i = firstDay - 1; i >= 0; i--) {
         const prevDayNum = daysInPrevMonth - i;
         const cell = document.createElement('div');
-        cell.className = 'min-h-[85px] p-2 bg-slate-50/50 text-slate-300 select-none';
+        cell.className = 'min-h-[85px] sm:min-h-[95px] p-2 bg-slate-50/50 text-slate-300 select-none';
         cell.innerHTML = `<span class="text-xs font-semibold">${prevDayNum}</span>`;
         grid.appendChild(cell);
     }
 
+    // Hari bulan saat ini
     for (let day = 1; day <= daysInMonth; day++) {
         const dayString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayBookings = reservasiByDate[dayString] || [];
         const isToday = isThisCurrentMonth && day === todayDate;
 
         const cell = document.createElement('div');
-        cell.className = `min-h-[85px] p-2 transition cursor-pointer hover:bg-blue-50/40 relative flex flex-col justify-between ${
+        cell.className = `min-h-[85px] sm:min-h-[95px] p-2 transition cursor-pointer hover:bg-blue-50/40 relative flex flex-col justify-between ${
             isToday ? 'bg-blue-50/30 ring-1 ring-inset ring-blue-500 font-bold' : 'bg-white'
         }`;
         cell.onclick = () => openCalDetail(dayString, dayBookings);
@@ -270,12 +236,13 @@ function renderCalendar() {
         grid.appendChild(cell);
     }
 
+    // Hari bulan berikutnya
     const totalCells = (firstDay + daysInMonth);
     const remainder = 7 - (totalCells % 7);
     if (remainder < 7) {
         for (let nextDay = 1; nextDay <= remainder; nextDay++) {
             const cell = document.createElement('div');
-            cell.className = 'min-h-[85px] p-2 bg-slate-50/50 text-slate-300 select-none';
+            cell.className = 'min-h-[85px] sm:min-h-[95px] p-2 bg-slate-50/50 text-slate-300 select-none';
             cell.innerHTML = `<span class="text-xs font-semibold">${nextDay}</span>`;
             grid.appendChild(cell);
         }
@@ -298,7 +265,7 @@ function openCalDetail(dateString, bookings) {
 
     const btnAjukan = document.getElementById('btn-ajukan-tanggal');
     if (btnAjukan) {
-        btnAjukan.href = `{{ route('mahasiswa.reservasi.create') }}?tanggal=${dateString}`;
+        btnAjukan.href = `{{ url('/reservasi/create') }}?tanggal=${dateString}`;
     }
 
     const listContainer = document.getElementById('modal-detail-list');
@@ -368,8 +335,8 @@ function openCalDetail(dateString, bookings) {
     document.getElementById('modal-cal-detail').classList.remove('hidden');
 }
 
+// Render kalender otomatis saat halaman siap
 document.addEventListener('DOMContentLoaded', () => {
     renderCalendar();
 });
 </script>
-@endsection

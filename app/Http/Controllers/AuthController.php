@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function showLogin() { return view('auth.login'); }
+    public function showLogin() 
+    { 
+        return view('auth.login'); 
+    }
 
     public function login(Request $request)
     {
@@ -20,13 +23,23 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->intended('/dashboard')->with('success', 'Selamat datang kembali!');
+
+            // Arahkan langsung sesuai role pengguna
+            $role = strtolower(trim(Auth::user()->role));
+            if ($role === 'admin') {
+                return redirect()->route('admin.dashboard')->with('success', 'Selamat datang Admin!');
+            }
+
+            return redirect()->route('mahasiswa.dashboard')->with('success', 'Selamat datang kembali!');
         }
 
         return back()->withErrors(['email' => 'Email atau kata sandi tidak cocok.'])->withInput();
     }
 
-    public function showRegister() { return view('auth.register'); }
+    public function showRegister() 
+    { 
+        return view('auth.register'); 
+    }
 
     public function register(Request $request)
     {
@@ -36,15 +49,17 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed',
         ]);
 
+        // ✅ PERBAIKAN: Ubah default role menjadi 'mahasiswa'
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user', // Default mahasiswa
+            'role' => 'mahasiswa', // <-- HARUS 'mahasiswa' agar cocok dengan route middleware
         ]);
 
         Auth::login($user);
-        return redirect('/dashboard')->with('success', 'Pendaftaran berhasil!');
+        
+        return redirect()->route('mahasiswa.dashboard')->with('success', 'Pendaftaran berhasil!');
     }
 
     public function logout(Request $request)
