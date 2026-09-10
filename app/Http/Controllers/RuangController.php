@@ -8,12 +8,24 @@ use Illuminate\Support\Facades\Storage;
 
 class RuangController extends Controller
 {
+    // ================== TAMPILAN ADMIN ==================
     public function index()
     {   
         $ruangs = Ruang::all();
+        // Arahkan ke view admin, pastikan file resources/views/ruang/index.blade.php tersedia
         return view('ruang.index', compact('ruangs'));
     }
 
+    // ================== TAMPILAN MAHASISWA ==================
+    public function indexMahasiswa()
+    {
+        $ruangs = Ruang::all();
+        // Arahkan ke dashboard mahasiswa untuk melihat daftar lab yang bisa dipinjam
+        // Pastikan file resources/views/mahasiswa/dashboard.blade.php tersedia
+        return view('mahasiswa.dashboard', compact('ruangs'));
+    }
+
+    // ================== KELOLA DATA (HANYA ADMIN) ==================
     public function store(Request $request)
     {
         $request->validate([
@@ -39,7 +51,8 @@ class RuangController extends Controller
             'foto' => $fotoPath,
         ]);
 
-        return redirect()->route('ruang.index')->with('success', 'Ruang laboratorium berhasil ditambahkan.');
+        // REVISI: Ubah redirect ke rute admin yang sudah diprefix
+        return redirect()->route('admin.ruang.index')->with('success', 'Ruang laboratorium berhasil ditambahkan.');
     }
 
     public function destroy($id)
@@ -49,6 +62,7 @@ class RuangController extends Controller
             Storage::disk('public')->delete($ruang->foto);
         }
         $ruang->delete();
+        
         return back()->with('success', 'Data ruang laboratorium berhasil dihapus.');
     }
 }

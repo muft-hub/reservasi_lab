@@ -13,20 +13,31 @@
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
     <!-- Navbar Responsif -->
-    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <a href="{{ route('dashboard') }}" class="font-bold text-lg text-blue-600 flex items-center gap-2">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+        <!-- Logo diarahkan ke url('/') agar dilempar otomatis ke dashboard masing-masing -->
+        <a href="{{ url('/') }}" class="font-bold text-lg text-blue-600 flex items-center gap-2">
             🏢 LabReserve Informatika
         </a>
+        
         <div class="flex items-center gap-4 text-sm font-medium">
-            <a href="{{ route('dashboard') }}" class="hover:text-blue-600">Dashboard</a>
-            <a href="{{ route('ruang.index') }}" class="hover:text-blue-600">Data Ruang</a>
-            <a href="{{ route('reservasi.index') }}" class="hover:text-blue-600">Reservasi</a>
-            <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 text-xs font-bold">
+            
+            <!-- MENU DINAMIS BERDASARKAN ROLE -->
+            @if(Auth::user()->role === 'admin')
+                <a href="{{ route('admin.dashboard') }}" class="hover:text-blue-600 transition-colors">Dashboard Admin</a>
+                <a href="{{ route('admin.ruang.index') }}" class="hover:text-blue-600 transition-colors">Data Ruang</a>
+                <a href="{{ route('admin.reservasi.index') }}" class="hover:text-blue-600 transition-colors">Kelola Reservasi</a>
+            @else
+                <a href="{{ route('mahasiswa.dashboard') }}" class="hover:text-blue-600 transition-colors">Daftar Ruang</a>
+                <a href="{{ route('mahasiswa.reservasi.riwayat') }}" class="hover:text-blue-600 transition-colors">Riwayat Saya</a>
+            @endif
+
+            <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200 ml-2">
                 {{ Auth::user()->name }} ({{ strtoupper(Auth::user()->role) }})
             </span>
-            <form action="{{ route('logout') }}" method="POST" class="inline">
+            
+            <form action="{{ route('logout') }}" method="POST" class="inline ml-2">
                 @csrf
-                <button type="submit" class="text-rose-600 hover:underline">Keluar</button>
+                <button type="submit" class="text-rose-600 font-semibold hover:text-rose-800 hover:underline transition-colors">Keluar</button>
             </form>
         </div>
     </nav>
@@ -36,6 +47,11 @@
         @yield('content')
     </main>
 
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 text-center py-4 text-xs text-slate-500 mt-auto">
+        &copy; {{ date('Y') }} LabReserve Informatika. Sistem Peminjaman Ruangan.
+    </footer>
+
     <!-- SweetAlert Feedback Toast -->
     <script>
         @if(session('success'))
@@ -44,7 +60,9 @@
                 title: 'Berhasil!',
                 text: "{{ session('success') }}",
                 timer: 3000,
-                showConfirmButton: false
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end' // Dibuat ala toast agar tidak mengganggu layar
             });
         @endif
 
@@ -66,7 +84,8 @@
                 confirmButtonColor: '#e11d48',
                 cancelButtonColor: '#64748b',
                 confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
+                reverseButtons: true
             }).then((result) => {
                 if (result.isConfirmed) {
                     document.getElementById(formId).submit();

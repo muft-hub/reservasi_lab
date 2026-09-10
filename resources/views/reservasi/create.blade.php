@@ -7,20 +7,29 @@
         <p class="text-xs text-slate-500">Sistem akan otomatis mengecek bentrok jadwal sebelum menyimpan.</p>
     </div>
 
+    {{-- Pesan Error Validasi atau Bentrok --}}
+    @if(session('error'))
+        <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
+            {{ session('error') }}
+        </div>
+    @endif
+
     @if($errors->any())
         <div class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl font-medium">
             {{ $errors->first() }}
         </div>
     @endif
 
-    <form action="{{ route('reservasi.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+    <!-- REVISI 1: Ubah route menjadi route mahasiswa -->
+    <form action="{{ route('mahasiswa.reservasi.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
         @csrf
         <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Laboratorium *</label>
-            <select name="ruang_id" required class="w-full px-3 py-2 border rounded-xl text-xs">
+            <select name="ruang_id" required class="w-full px-3 py-2 border rounded-xl text-xs bg-slate-50">
                 <option value="">-- Pilih Laboratorium --</option>
                 @foreach(\App\Models\Ruang::all() as $r)
-                    <option value="{{ $r->id }}" {{ old('ruang_id') == $r->id ? 'selected' : '' }}>
+                    <!-- REVISI 3: Otomatis memilih ruangan berdasarkan data dari controller -->
+                    <option value="{{ $r->id }}" {{ (old('ruang_id') ?? ($ruang->id ?? '')) == $r->id ? 'selected' : '' }}>
                         {{ $r->kode }} - {{ $r->nama }} (Kapasitas: {{ $r->kapasitas }})
                     </option>
                 @endforeach
@@ -50,12 +59,13 @@
 
         <div>
             <label class="block text-xs font-semibold text-slate-700 mb-1">Unggah Berkas Pendukung (Surat Izin / Proposal - PDF/DOCX maks 2MB)</label>
-            <input type="file" name="berkas" accept=".pdf,.docx,.doc" class="w-full text-xs text-slate-500">
+            <input type="file" name="berkas" accept=".pdf,.docx,.doc" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
         </div>
 
         <div class="flex items-center justify-end gap-3 pt-4 border-t">
-            <a href="{{ route('reservasi.index') }}" class="px-4 py-2 border rounded-xl text-xs font-semibold">Batal</a>
-            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm">
+            <!-- REVISI 2: Arahkan tombol batal ke riwayat mahasiswa -->
+            <a href="{{ route('mahasiswa.reservasi.riwayat') }}" class="px-4 py-2 border rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">Batal</a>
+            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors">
                 Kirim Pengajuan Reservasi
             </button>
         </div>

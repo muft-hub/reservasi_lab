@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Storage;
 
 class ReservasiController extends Controller
 {
-    // 1. Tampilkan Daftar Reservasi dengan Pencarian & Filter
-    public function index(Request $request)
+    // ==========================================
+    // 1. TAMPILAN ADMIN (Melihat Semua Data)
+    // ==========================================
+    public function indexAdmin(Request $request)
     {
         $query = Reservasi::with(['user', 'ruang']);
 
@@ -45,7 +47,33 @@ class ReservasiController extends Controller
         return view('reservasi.index', compact('reservasis', 'ruangs'));
     }
 
-    // 2. Simpan Reservasi Baru dengan PENCEGAHAN BENTROK JADWAL
+    // ==========================================
+    // 2. TAMPILAN MAHASISWA (Melihat Riwayat Sendiri)
+    // ==========================================
+    public function indexMahasiswa(Request $request)
+    {
+        // Hanya tampilkan reservasi milik user yang sedang login
+        $reservasis = Reservasi::with(['ruang'])
+            ->where('user_id', Auth::id())
+            ->orderBy('tanggal', 'desc')
+            ->paginate(10);
+
+        // Pastikan kamu membuat file view ini (misal: resources/views/reservasi/riwayat.blade.php)
+        return view('reservasi.riwayat', compact('reservasis'));
+    }
+
+    // ==========================================
+    // 3. FORM PENGAJUAN (Mahasiswa)
+    // ==========================================
+    public function create($ruang_id)
+    {
+        $ruang = Ruang::findOrFail($ruang_id);
+        return view('reservasi.create', compact('ruang'));
+    }
+
+    // ==========================================
+    // 4. SIMPAN RESERVASI BARU & ANTI BENTROK
+    // ==========================================
     public function store(Request $request)
     {
         $request->validate([
@@ -57,8 +85,7 @@ class ReservasiController extends Controller
             'berkas' => 'nullable|file|mimes:pdf,docx,doc|max:2048', // Batas 2MB
         ]);
 
-        // LOGIKA ANTI-BENTROK JADWAL (Poin Kunci Rubrik):
-        // Cek apakah ada jadwal aktif (bukan Ditolak) pada ruang & tanggal sama yang bertabrakan
+        // LOGIKA ANTI-BENTROK JADWAL:
         $bentrok = Reservasi::where('ruang_id', $request->ruang_id)
             ->where('tanggal', $request->tanggal)
             ->where('status', '!=', 'Ditolak')
@@ -77,6 +104,9 @@ class ReservasiController extends Controller
             $namaBerkas = $request->file('berkas')->store('berkas_pendukung', 'public');
         }
 
+        // Cek Role (Jika yang bikin kebetulan admin, langsung disetujui)
+        $statusAwal = Auth::user()->role === 'admin' ? 'Disetujui' : 'Menunggu';
+
         Reservasi::create([
             'user_id' => Auth::id(),
             'ruang_id' => $request->ruang_id,
@@ -85,16 +115,24 @@ class ReservasiController extends Controller
             'jam_selesai' => $request->jam_selesai,
             'keperluan' => $request->keperluan,
             'berkas_pendukung' => $namaBerkas,
-            'status' => Auth::user()->isAdmin() ? 'Disetujui' : 'Menunggu',
+            'status' => $statusAwal,
         ]);
 
-        return redirect()->route('reservasi.index')->with('success', 'Reservasi berhasil diajukan!');
+        // REVISI: Redirect ke riwayat mahasiswa
+        if (Auth::user()->role === 'admin') {
+            return redirect()->route('admin.reservasi.index')->with('success', 'Reservasi berhasil ditambahkan!');
+        }
+        
+        return redirect()->route('mahasiswa.reservasi.riwayat')->with('success', 'Reservasi berhasil diajukan! Menunggu persetujuan Admin.');
     }
 
-    // 3. Ubah Status Reservasi (Khusus Admin)
+    // ==========================================
+    // 5. UBAH STATUS (Khusus Admin)
+    // ==========================================
     public function updateStatus(Request $request, $id)
     {
-        if (!Auth::user()->isAdmin()) {
+        // Pengecekan keamanan ganda menggunakan kolom 'role'
+        if (Auth::user()->role !== 'admin') {
             abort(403, 'Hanya Admin yang dapat memproses status reservasi.');
         }
 
@@ -112,12 +150,14 @@ class ReservasiController extends Controller
         return back()->with('success', "Status reservasi berhasil diubah menjadi {$request->status}.");
     }
 
-    // 4. Hapus Reservasi
+    // ==========================================
+    // 6. HAPUS RESERVASI
+    // ==========================================
     public function destroy($id)
     {
         $res = Reservasi::findOrFail($id);
 
-        if (!Auth::user()->isAdmin() && $res->user_id !== Auth::id()) {
+        if (Auth::user()->role !== 'admin' && $res->user_id !== Auth::id()) {
             abort(403);
         }
 
